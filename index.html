@@ -1130,6 +1130,102 @@
         scroll-behavior: auto
       }
     }
+
+    /* Scroll down indicator */
+    .scroll-indicator {
+      position: fixed;
+      bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+      left: 50%;
+      transform: translate(-50%, 8px);
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 18px 7px 20px;
+      background: rgba(250, 246, 238, 0.94);
+      border: 1px solid var(--gold-soft);
+      border-radius: 999px;
+      box-shadow: 0 4px 22px rgba(60, 50, 30, 0.12), 0 0 12px rgba(218, 165, 32, 0.18);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: var(--gold);
+      font-family: var(--sans);
+      font-size: .65rem;
+      font-weight: 500;
+      letter-spacing: .24em;
+      text-transform: uppercase;
+      text-decoration: none;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.5s ease, transform 0.5s ease, visibility 0.5s, background .3s, color .3s, border-color .3s;
+      z-index: 15;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .scroll-indicator.visible {
+      opacity: 1;
+      visibility: visible;
+      transform: translate(-50%, 0);
+      pointer-events: auto;
+    }
+
+    .scroll-indicator.scrolled-out {
+      opacity: 0;
+      visibility: hidden;
+      transform: translate(-50%, 12px);
+      pointer-events: none;
+    }
+
+    .scroll-indicator:hover {
+      background: var(--gold);
+      color: #ffffff;
+      border-color: var(--gold);
+      transform: translate(-50%, -2px);
+      box-shadow: 0 6px 24px rgba(184, 152, 90, 0.4);
+    }
+
+    .scroll-indicator-icon {
+      width: 14px;
+      height: 14px;
+      animation: scrollBounce 2s ease-in-out infinite;
+    }
+
+    .scroll-indicator:hover .scroll-indicator-icon {
+      animation-play-state: paused;
+    }
+
+    .intro-scroll-prompt {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-top: 36px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform .3s ease;
+    }
+
+    .intro-scroll-prompt:hover {
+      transform: translateY(3px);
+    }
+
+    .intro-scroll-prompt .scroll-arrow {
+      animation: scrollBounce 2s ease-in-out infinite;
+    }
+
+    @keyframes scrollBounce {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(5px);
+      }
+    }
   </style>
 </head>
 
@@ -1139,6 +1235,12 @@
     <source src="music/song.mp3" type="audio/mpeg">
   </audio>
   <main id="app"></main>
+  <div class="scroll-indicator" id="scroll-indicator" role="button" tabindex="0" aria-label="Scroll down to view invitation details" onclick="scrollToNext()">
+    <span>Scroll</span>
+    <svg class="scroll-indicator-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+      <path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  </div>
   <footer class="foot">
     <div class="serif" id="fmono"></div>
     <div class="small" style="margin-top:8px" id="fdate"></div>
@@ -1262,6 +1364,12 @@
     ${orn}
     <p class="quote r">“${W.verse.text}”</p>
     <p class="small r" style="margin-top:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-size:.85rem">— ${W.verse.ref} —</p>
+    <div class="intro-scroll-prompt r" onclick="scrollToNext()" style="margin-top:34px" role="button" tabindex="0" aria-label="Scroll down">
+      <span class="small" style="letter-spacing:.25em;text-transform:uppercase;color:var(--gold);font-size:.68rem">Scroll to explore</span>
+      <svg class="scroll-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--gold);margin-top:6px;display:block" aria-hidden="true">
+        <path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </div>
   </div>
 </section>
 
@@ -1512,7 +1620,36 @@ ${W.compliments && W.compliments.length ? `
         const inames = document.querySelector('#intro .intro-names');
         if (inames) inames.classList.add('in');
       }, 500);
+
+      setTimeout(() => {
+        const scrollIndicator = document.getElementById('scroll-indicator');
+        if (scrollIndicator && window.scrollY <= 60) {
+          scrollIndicator.classList.add('visible');
+        }
+      }, 1000);
     }
+
+    /* ===== Scroll Down Handler ===== */
+    function scrollToNext() {
+      const nextSec = document.querySelector('.alt');
+      if (nextSec) {
+        nextSec.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        window.scrollBy({ top: window.innerHeight * 0.75, behavior: 'smooth' });
+      }
+    }
+
+    window.addEventListener('scroll', () => {
+      const scrollIndicator = document.getElementById('scroll-indicator');
+      if (!scrollIndicator || !opened) return;
+      if (window.scrollY > 60) {
+        scrollIndicator.classList.remove('visible');
+        scrollIndicator.classList.add('scrolled-out');
+      } else {
+        scrollIndicator.classList.remove('scrolled-out');
+        scrollIndicator.classList.add('visible');
+      }
+    }, { passive: true });
 
     /* ===== Universal Tap Handling (Works across all mobile devices, tablets & browsers) ===== */
     function triggerOpen(e) {
